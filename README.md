@@ -6,7 +6,7 @@ WookleDoo is a standalone TypeScript command-line tool for batch-converting refe
 
 It began with a practical need: preparing 50+ reference photos across 11 galleries for the Rakennustyö Immonen (RTI) website without individually exporting every image.
 
-> **Project status:** Planning and documentation. The CLI described below is the **target behavior**, not yet implemented. See [ROADMAP.md](ROADMAP.md).
+> **Project status:** The TypeScript CLI scaffold is runnable, but image conversion and argument handling are not implemented. The behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
 
 ## What it will do
 
@@ -58,12 +58,25 @@ references/
 
 There is no separate output root in v1. Both generated variants belong to their respective reference folder.
 
-## Planned usage (not yet runnable)
+## Setup and current usage
 
-Prerequisites: Node.js and pnpm. The implementation will use TypeScript, [Sharp](https://sharp.pixelplumbing.com/), and a small CLI runner.
+Prerequisites: Node.js 22 or newer and pnpm 11. The project uses TypeScript, [Sharp](https://sharp.pixelplumbing.com/), and tsx. From a checkout of this repository:
 
 ```bash
 pnpm install
+pnpm start -- /path/to/references
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+`pnpm start -- ...` currently prints a clear “conversion is not implemented yet” message and exits with status 1. The build writes JavaScript to `dist/`, which is ignored by Git. No images are read or written yet.
+
+## Planned usage (not yet implemented)
+
+These commands describe the intended later CLI behavior. They do not work in the current scaffold:
+
+```bash
 
 # Preview without writing anything
 pnpm start -- /path/to/references --dry-run

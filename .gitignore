@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Disposable fixtures and generated gallery variants
+fixtures/output/
+**/thumbnail/
+**/full-size/
+
+# Client photographs should never enter this repository.
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.heic
+*.tif
+*.tiff
