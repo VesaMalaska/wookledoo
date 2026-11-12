@@ -33,25 +33,47 @@ async function fingerprint(path: string) {
   return { hash: createHash("sha256").update(bytes).digest("hex"), mtimeMs: details.mtimeMs };
 }
 
-test("multiple galleries generate both correctly named WebP variants without changing sources", async () => {
+test("CLI converts mixed-case JPEG, PNG, and WebP galleries with correct geometry, orientation, and alpha", async () => {
   await fixture(async (root) => {
     const a = join(root, "alpha");
     const b = join(root, "beta");
     await mkdir(a); await mkdir(b);
-    const sources = [join(a, "photo.JPG"), join(a, "second.png"), join(b, "photo.webp")];
-    for (const source of sources) await image(source);
+    const cases = [
+      { source: join(a, "landscape.JPG"), thumbnail: [320, 160], full: [1920, 960] },
+      { source: join(a, "portrait.JPEG"), thumbnail: [160, 320], full: [960, 1920] },
+      { source: join(a, "alpha.PnG"), thumbnail: [160, 320], full: [600, 1200], alpha: true },
+      { source: join(b, "square.jpg"), thumbnail: [320, 320], full: [1920, 1920] },
+      { source: join(b, "small.WEBP"), thumbnail: [100, 50], full: [100, 50] },
+    ] as const;
+    await image(cases[0].source);
+    await sharp({ create: { width: 2400, height: 1200, channels: 3, background: "#327cab" } })
+      .jpeg().withMetadata({ orientation: 6 }).toFile(cases[1].source);
+    await sharp({ create: { width: 600, height: 1200, channels: 4, background: { r: 240, g: 40, b: 20, alpha: 0 } } })
+      .png().toFile(cases[2].source);
+    await image(cases[3].source, 2000, 2000);
+    await image(cases[4].source, 100, 50);
+    const sources = cases.map(({ source }) => source);
     const before = await Promise.all(sources.map(fingerprint));
     const result = run(root);
     assert.equal(result.status, 0, result.stderr);
-    for (const source of sources) {
+    assert.match(result.stdout, /Summary: 2 galleries, 5 sources, 0 ignored entries; 10 outputs generated, 0 outputs replaced, 0 existing skipped, 0 planned generates, 0 planned replacements, 0 multipage skipped, 0 failures/);
+    for (const entry of cases) {
+      const { source } = entry;
       const stem = source.split("/").at(-1)!.replace(/\.[^.]+$/, "");
       const gallery = source.slice(0, source.lastIndexOf("/"));
-      for (const [variant, width, height] of [["thumbnail", 320, 160], ["full-size", 1920, 960]] as const) {
+      for (const [variant, [width, height]] of [["thumbnail", entry.thumbnail], ["full-size", entry.full]] as const) {
         const output = join(gallery, variant, `${stem}.webp`);
         const metadata = await sharp(output).metadata();
         assert.equal(metadata.format, "webp");
         assert.equal(metadata.width, width);
         assert.equal(metadata.height, height);
+        assert.equal(metadata.orientation, undefined);
+        await sharp(output).raw().toBuffer();
+        if ("alpha" in entry) {
+          assert.equal(metadata.hasAlpha, true);
+          const pixel = await sharp(output).ensureAlpha().extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer();
+          assert.equal(pixel[3], 0);
+        }
       }
     }
     assert.deepEqual(await Promise.all(sources.map(fingerprint)), before);

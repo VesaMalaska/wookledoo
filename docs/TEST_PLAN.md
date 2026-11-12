@@ -33,6 +33,14 @@ The implementation should validate behavior with generated or public test fixtur
 
 Prefer Node temporary fixtures with cleanup. Use a small set of known test images or generate simple fixtures programmatically. Avoid fragile image-to-image exact byte comparisons; assert dimensions, format, orientation, alpha, presence, and file safety.
 
+## Issue #7 verification record
+
+The automated suite covers the matrix above using disposable fixtures. The end-to-end CLI test combines mixed-case JPG, JPEG, PNG, and WebP inputs across two galleries with landscape, portrait, square, small, EXIF-rotated, and transparent images. It decodes every resulting WebP and checks dimensions, orientation, alpha, summary counts, and source hashes/timestamps. Other tests cover sorted discovery, unsupported and symlinked entries, corrupt and multipage inputs, collisions, path and write failures, reruns, one missing variant, force, and dry-run.
+
+A separate manual run used two disposable galleries and five generated synthetic image scenes. Dry-run planned 10 outputs without changing the tree; conversion generated 10; repeat skipped 10 without changing them; force replaced 10. Every output decoded with the expected dimensions, source hashes and modification times were unchanged, and no temporary files remained. A landscape full-size image, rotated thumbnail, and transparent portrait full-size image were opened for visual inspection. These generated scenes verify the CLI workflow, but they do not replace owner review of real photographs.
+
+Known verification limits: WebP quality 82 is set explicitly in the encoder and reported by help, but the decoded WebP metadata does not independently expose the encoder quality value. Dry-run does not encode outputs or prove write permissions for output folders that do not yet exist. Existing regular output files are skipped without checking whether they decode.
+
 ## Manual QA before owner review
 
 1. Create a disposable parent directory containing several gallery folders and a mixture of valid images.
@@ -46,6 +54,6 @@ Prefer Node temporary fixtures with cleanup. Use a small set of known test image
 
 ## Real RTI dataset check
 
-Only after test-fixture QA passes, run locally against a **copy** of the actual 11-folder / 50+ photo dataset. Confirm gallery counts and review a representative sample of portrait/landscape images in the actual lightbox. Do not upload these originals to issues, PRs, logs, or the WookleDoo repository.
+After this PR is approved and merged, the owner should run locally against a **copy** of the actual 11-folder / 50+ photo dataset. Confirm gallery counts and review a representative sample of portrait/landscape images in the actual lightbox. Do not upload these originals to issues, PRs, logs, or the WookleDoo repository.
 
 **Release gate:** The owner approves the implementation PR after looking at actual generated images. Passing unit tests alone is not sufficient.

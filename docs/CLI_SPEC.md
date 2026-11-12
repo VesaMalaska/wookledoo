@@ -1,6 +1,6 @@
 # CLI and File-System Contract (v1)
 
-This document specifies the MVP. CLI parsing, gallery discovery, transformation, output generation, and dry-run reporting are implemented. It should remain consistent with README examples and acceptance tests.
+This document specifies the implemented MVP. It should remain consistent with README examples and acceptance tests.
 
 ## Command
 
@@ -70,6 +70,7 @@ Rules:
 - Default: if a generated destination already exists, skip that *variant*, leaving its content and timestamp unchanged. A second variant may still need generation.
 - `--force`: overwrite generated destinations after a successful conversion, not originals. Prefer complete temporary files plus an atomic rename in the same destination directory.
 - `--dry-run`: validate/discover/plan but perform **no filesystem writes**, including directory creation, timestamp changes, or temporary files.
+- Dry-run reads source metadata to catch corrupt and multipage inputs; it does not perform output encoding or prove that a new directory will be writable during conversion.
 - Do not report a file as generated if encoding or writing failed.
 - On processing error, continue with other independent images where safe, log the path and cause, and finish with nonzero exit status.
 
@@ -86,6 +87,7 @@ Suggested exit codes:
 - `2` — invalid command usage or invalid input root.
 
 The implemented help and README must match the actual accepted flags and exit semantics.
+An existing regular output file is skipped without validating its WebP contents. `--force` regenerates it.
 
 ## Scope boundary
 

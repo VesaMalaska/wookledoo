@@ -33,16 +33,18 @@ A deliberately small, standalone batch image converter. Its first job is produci
 **Goal:** Convert a multi-gallery input directory in one command.
 
 ### Chunk 1.1 — CLI scaffold
-- [ ] **Task 1:** Set up the minimal TypeScript project (pnpm, TS/tsx, Sharp, scripts, typecheck, tests, ignore rules).
-- [ ] **Task 2:** Implement argument parsing, help, input validation, and immediate-gallery discovery.
+- [x] **Task 1:** Set up the minimal TypeScript project (pnpm, TS/tsx, Sharp, scripts, typecheck, tests, ignore rules).
+- [x] **Task 2:** Implement argument parsing, help, input validation, and immediate-gallery discovery.
 
 ### Chunk 1.2 — Image generation
-- [ ] **Task 3:** Convert each supported source to 320px and 1920px WebP variants using the agreed rules.
-- [ ] **Task 4:** Create the correct output directories, retain original basenames, detect name collisions, skip existing results, and implement `--force`.
+- [x] **Task 3:** Convert each supported source to 320px and 1920px WebP variants using the agreed rules.
+- [x] **Task 4:** Create the correct output directories, retain original basenames, detect name collisions, skip existing results, and implement `--force`.
 
 ### Chunk 1.3 — Safe operation and verification
-- [ ] **Task 5:** Implement `--dry-run`, useful progress and final summary, controlled error handling, and exit statuses.
-- [ ] **Task 6:** Add automated coverage and execute the manual QA checklist against representative multi-folder fixtures.
+- [x] **Task 5:** Implement `--dry-run`, useful progress and final summary, controlled error handling, and exit statuses.
+- [x] **Task 6:** Add automated coverage and execute the manual QA checklist against representative multi-folder fixtures.
+
+Tasks 1–6 were verified with generated fixtures, automated tests, and the CLI dry-run/conversion/repeat/force sequence for Issue #7. Representative outputs were visually inspected. This does not include owner QA with the real RTI photographs; that review remains the MVP release gate.
 
 **MVP acceptance:**
 - Given a folder with multiple galleries and images, a single CLI invocation generates the right files in every gallery.
