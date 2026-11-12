@@ -1,5 +1,6 @@
 import { lstat, readdir } from "node:fs/promises";
 import { extname, resolve } from "node:path";
+import { generateOutputs } from "./output.js";
 
 const supportedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const outputDirectoryNames = new Set(["thumbnail", "full-size"]);
@@ -27,16 +28,16 @@ class InputError extends Error {}
 const usage = `Usage: pnpm start -- <references-directory> [--dry-run] [--force]
        pnpm start -- --help
 
-Discover immediate gallery directories and their direct JPG, JPEG, PNG, and WebP files.
-No images are converted or output files created in this version.
+Convert direct JPG, JPEG, PNG, and WebP files in immediate gallery directories.
+Create thumbnail/ and full-size/ WebP variants inside each gallery.
 
 Options:
-  --dry-run  Recognized for future processing; discovery already makes no changes.
-  --force    Recognized for future processing; no outputs are replaced yet.
+  --dry-run  Show planned outputs without writing files or directories.
+  --force    Replace existing generated variants.
   --help     Show this help and exit.
 
-Future conversion presets: thumbnail 320 x 320, full-size 1920 x 1920,
-WebP quality 82. Invalid usage or input exits 2; discovery errors exit 1.`;
+Presets: thumbnail 320 x 320, full-size 1920 x 1920, WebP quality 82.
+Invalid usage or input exits 2; processing errors exit 1.`;
 
 function parseArguments(args: string[]): Options | "help" {
   // pnpm 11 passes the documented separator through to the script.
@@ -152,12 +153,14 @@ async function main(): Promise<void> {
 
   const sourceCount = result.galleries.reduce((count, gallery) => count + gallery.sources.length, 0);
   console.log(`Input: ${result.root}`);
-  console.log(`Mode: discovery only (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"})`);
+  console.log(`Mode: conversion (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"})`);
   for (const gallery of result.galleries) {
     console.log(`Gallery: ${gallery.path} (${gallery.sources.length} ${gallery.sources.length === 1 ? "source" : "sources"})`);
     for (const source of gallery.sources) console.log(`  ${source}`);
   }
-  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored entries; 0 outputs created.`);
+  const output = await generateOutputs(result, options);
+  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored entries; ${output.generated} outputs generated, ${output.skipped} existing skipped, ${output.failed} failures.`);
+  if (output.failed > 0) process.exitCode = 1;
 }
 
 await main();

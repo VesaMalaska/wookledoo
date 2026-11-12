@@ -21,11 +21,11 @@ async function fixture() {
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
 }
 
-test("help succeeds without a path and describes discovery-only behavior", () => {
+test("help succeeds without a path and describes conversion behavior", () => {
   const result = run(["--help"]);
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: pnpm start/);
-  assert.match(result.stdout, /No images are converted/);
+  assert.match(result.stdout, /Create thumbnail\/ and full-size\/ WebP variants/);
   assert.equal(result.stderr, "");
   assert.equal(run(["--", "--help"]).status, 0);
 });
@@ -77,16 +77,16 @@ test("absolute and relative paths discover sorted galleries and mixed-case input
     await symlink(join(a, "a.JPG"), join(b, "linked.jpg"));
 
     const absolute = run([root, "--dry-run", "--force"]);
-    const withPnpmSeparator = run(["--", root]);
+    const withPnpmSeparator = run(["--", root, "--dry-run"]);
     const relativePath = relative(projectRoot, root);
-    const relativeResult = run([relativePath], projectRoot);
+    const relativeResult = run([relativePath, "--dry-run"], projectRoot);
     assert.equal(absolute.status, 0, absolute.stderr);
     assert.equal(relativeResult.status, 0, relativeResult.stderr);
     assert.equal(withPnpmSeparator.status, 0, withPnpmSeparator.stderr);
     assert.match(absolute.stdout, /dry-run: on, force: on/);
-    assert.match(relativeResult.stdout, /dry-run: off, force: off/);
-    assert.match(absolute.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs created/);
-    assert.match(relativeResult.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs created/);
+    assert.match(relativeResult.stdout, /dry-run: on, force: off/);
+    assert.match(absolute.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs generated, 0 existing skipped, 0 failures/);
+    assert.match(relativeResult.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs generated, 0 existing skipped, 0 failures/);
 
     const lines = absolute.stdout.split("\n").filter((line) => line.startsWith("Gallery:") || line.startsWith("  "));
     assert.deepEqual(lines, [
