@@ -6,7 +6,7 @@ WookleDoo is a standalone TypeScript command-line tool for batch-converting refe
 
 It began with a practical need: preparing 50+ reference photos across 11 galleries for the Rakennustyö Immonen (RTI) website without individually exporting every image.
 
-> **Project status:** The TypeScript CLI scaffold is runnable, but image conversion and argument handling are not implemented. The behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
+> **Project status:** CLI argument handling and gallery discovery are implemented. Image conversion and output generation are not. The image behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
 
 ## What it will do
 
@@ -65,16 +65,18 @@ Prerequisites: Node.js 22 or newer and pnpm 11. The project uses TypeScript, [Sh
 ```bash
 pnpm install
 pnpm start -- /path/to/references
+pnpm start -- /path/to/references --dry-run --force
+pnpm start -- --help
 pnpm typecheck
 pnpm test
 pnpm build
 ```
 
-`pnpm start -- ...` currently prints a clear “conversion is not implemented yet” message and exits with status 1. The build writes JavaScript to `dist/`, which is ignored by Git. No images are read or written yet.
+`pnpm start -- ...` currently lists immediate galleries and supported source files in deterministic order, then prints counts for galleries, sources, and ignored entries. It reads directory entries but does not open or convert image data, create output folders, or write files. `--dry-run` and `--force` are accepted but have no processing effect yet. Help exits 0; invalid usage or input exits 2; gallery discovery errors exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
 
-## Planned usage (not yet implemented)
+## Planned conversion usage (not yet implemented)
 
-These commands describe the intended later CLI behavior. They do not work in the current scaffold:
+These commands are accepted now, but conversion and output behavior will be implemented in later tasks:
 
 ```bash
 
