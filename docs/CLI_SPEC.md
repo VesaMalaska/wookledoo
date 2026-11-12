@@ -1,6 +1,6 @@
 # CLI and File-System Contract (v1)
 
-This document specifies the planned MVP. CLI parsing, gallery discovery, and a standalone transformation module are implemented; CLI conversion and output generation are not yet integrated. It should remain consistent with README examples and acceptance tests.
+This document specifies the MVP. CLI parsing, gallery discovery, transformation, and output generation are implemented. Complete dry-run reporting and progress summaries are planned for Issue #6. It should remain consistent with README examples and acceptance tests.
 
 ## Command
 

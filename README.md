@@ -6,9 +6,9 @@ WookleDoo is a standalone TypeScript command-line tool for batch-converting refe
 
 It began with a practical need: preparing 50+ reference photos across 11 galleries for the Rakennustyö Immonen (RTI) website without individually exporting every image.
 
-> **Project status:** CLI argument handling, gallery discovery, and a standalone image transformation module are implemented. The CLI does not yet convert images or generate outputs. The end-to-end behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
+> **Project status:** CLI argument handling, gallery discovery, Sharp transformation, and safe gallery output generation are implemented. Detailed dry-run reporting and final progress summaries are planned for Issue #6. See [ROADMAP.md](ROADMAP.md).
 
-## What it will do
+## What it does
 
 - Accept one parent directory as a command-line argument.
 - Discover its immediate subdirectories as reference galleries.
@@ -72,13 +72,11 @@ pnpm test
 pnpm build
 ```
 
-`pnpm start -- ...` currently lists immediate galleries and supported source files in deterministic order, then prints counts for galleries, sources, and ignored entries. It reads directory entries but does not open or convert image data, create output folders, or write files. `--dry-run` and `--force` are accepted but have no processing effect yet. Help exits 0; invalid usage or input exits 2; gallery discovery errors exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
+`pnpm start -- ...` lists immediate galleries and supported sources in deterministic order, then generates missing WebP variants inside each gallery. It skips existing variants by default and regenerates them with `--force`. `--dry-run` shows planned paths without writing. Help exits 0; invalid usage or input exits 2; processing failures exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
 
-`src/transform.ts` provides `transformImage(sourcePath, "thumbnail" | "full-size")`, which returns one WebP `Buffer` per call. It reads one source at a time and leaves output paths and writes to later tasks. `ImageTransformError.code` distinguishes unreadable, unsupported-format, and multipage inputs; the caller can report or skip them as appropriate.
+`src/transform.ts` provides `transformImage(sourcePath, "thumbnail" | "full-size")`, which returns one WebP `Buffer` per call. The CLI processes variants sequentially, writes through same-directory temporary files, and leaves originals untouched. `ImageTransformError.code` distinguishes unreadable, unsupported-format, and multipage inputs.
 
-## Planned conversion usage (not yet implemented)
-
-These commands are accepted now, but conversion and output behavior will be implemented in later tasks:
+## Conversion usage
 
 ```bash
 
