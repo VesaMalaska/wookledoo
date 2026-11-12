@@ -14,6 +14,8 @@ export interface Discovery {
   root: string;
   galleries: Gallery[];
   ignoredEntries: number;
+  ignoredPaths: string[];
+  errors: string[];
 }
 
 interface Options {
@@ -98,10 +100,12 @@ export async function discover(root: string): Promise<Discovery> {
   }
 
   const galleries: Gallery[] = [];
-  let ignoredEntries = 0;
+  const ignoredPaths: string[] = [];
+  const errors: string[] = [];
   for (const child of children.sort((a, b) => compareNames(a.name, b.name))) {
-    if (!child.isDirectory() || outputDirectoryNames.has(child.name.toLowerCase())) {
-      ignoredEntries++;
+    if (child.isDirectory() && outputDirectoryNames.has(child.name.toLowerCase())) continue;
+    if (!child.isDirectory()) {
+      ignoredPaths.push(resolve(root, child.name));
       continue;
     }
     const galleryPath = resolve(root, child.name);
@@ -109,19 +113,21 @@ export async function discover(root: string): Promise<Discovery> {
     try {
       entries = await readdir(galleryPath, { withFileTypes: true });
     } catch (error) {
-      throw new Error(`Cannot read gallery "${galleryPath}": ${describeError(error)}`);
+      errors.push(`Cannot read gallery "${galleryPath}": ${describeError(error)}`);
+      continue;
     }
     const sources: string[] = [];
     for (const entry of entries.sort((a, b) => compareNames(a.name, b.name))) {
+      if (entry.isDirectory() && outputDirectoryNames.has(entry.name.toLowerCase())) continue;
       if (entry.isFile() && supportedExtensions.has(extname(entry.name).toLowerCase())) {
         sources.push(resolve(galleryPath, entry.name));
       } else {
-        ignoredEntries++;
+        ignoredPaths.push(resolve(galleryPath, entry.name));
       }
     }
     galleries.push({ path: galleryPath, sources });
   }
-  return { root, galleries, ignoredEntries };
+  return { root, galleries, ignoredEntries: ignoredPaths.length, ignoredPaths, errors };
 }
 
 function describeError(error: unknown): string {
@@ -153,13 +159,16 @@ async function main(): Promise<void> {
 
   const sourceCount = result.galleries.reduce((count, gallery) => count + gallery.sources.length, 0);
   console.log(`Input: ${result.root}`);
-  console.log(`Mode: conversion (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"})`);
+  console.log(`Mode: ${options.dryRun ? "dry-run" : "conversion"} (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"})`);
+  console.log("Presets: thumbnail 320 x 320, full-size 1920 x 1920; WebP quality 82.");
   for (const gallery of result.galleries) {
     console.log(`Gallery: ${gallery.path} (${gallery.sources.length} ${gallery.sources.length === 1 ? "source" : "sources"})`);
     for (const source of gallery.sources) console.log(`  ${source}`);
   }
+  for (const path of result.ignoredPaths) console.log(`Ignored: ${path}`);
+  for (const error of result.errors) console.error(`Error: ${error}`);
   const output = await generateOutputs(result, options);
-  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored entries; ${output.generated} outputs generated, ${output.skipped} existing skipped, ${output.failed} failures.`);
+  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored ${result.ignoredEntries === 1 ? "entry" : "entries"}; ${output.generated} outputs generated, ${output.replaced} outputs replaced, ${output.skipped} existing skipped, ${output.planned} planned generates, ${output.replacements} planned replacements, ${output.multipage} multipage skipped, ${output.failed} failures.`);
   if (output.failed > 0) process.exitCode = 1;
 }
 
