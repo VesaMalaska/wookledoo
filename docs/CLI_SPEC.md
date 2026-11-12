@@ -1,6 +1,6 @@
 # CLI and File-System Contract (v1)
 
-This document specifies the planned MVP. **The CLI is not implemented yet.** It should remain consistent with README examples and acceptance tests.
+This document specifies the planned MVP. CLI parsing and gallery discovery are implemented; conversion and output generation are not yet implemented. It should remain consistent with README examples and acceptance tests.
 
 ## Command
 
