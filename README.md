@@ -6,7 +6,7 @@ WookleDoo is a standalone TypeScript command-line tool for batch-converting refe
 
 It began with a practical need: preparing 50+ reference photos across 11 galleries for the Rakennustyö Immonen (RTI) website without individually exporting every image.
 
-> **Project status:** CLI argument handling, gallery discovery, Sharp transformation, safe gallery output generation, and dry-run reporting are implemented. See [ROADMAP.md](ROADMAP.md).
+> **Project status:** The CLI and MVP fixture verification are complete. Owner QA with a local copy of the real photo collection is still pending. See [ROADMAP.md](ROADMAP.md).
 
 ## What it does
 
@@ -73,6 +73,8 @@ pnpm build
 ```
 
 `pnpm start -- ...` lists immediate galleries and supported sources in deterministic order, then generates missing WebP variants inside each gallery. It skips existing variants by default and regenerates them with `--force`. `--dry-run` validates sources and output paths, reports planned generations, replacements, and skips, and makes no filesystem changes. The summary separates generated, replaced, and planned outputs and counts ignored entries, multipage skips, and failures. Help exits 0; invalid usage or input exits 2; processing failures exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
+
+Dry-run checks image metadata but does not encode images or test whether a new output directory can actually be written. A regular file already at a destination is skipped without checking its contents; use `--force` to regenerate it. Animated or multipage supported inputs are warned about and skipped.
 
 `src/transform.ts` provides `transformImage(sourcePath, "thumbnail" | "full-size")`, which returns one WebP `Buffer` per call. The CLI processes variants sequentially, writes through same-directory temporary files, and leaves originals untouched. `ImageTransformError.code` distinguishes unreadable, unsupported-format, and multipage inputs.
 

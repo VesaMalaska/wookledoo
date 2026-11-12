@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,6 +116,24 @@ test("a symlinked input root is rejected", async () => {
     const result = run([link]);
     assert.equal(result.status, 2);
     assert.match(result.stderr, /not a directory/);
+  } finally {
+    await cleanup();
+  }
+});
+
+test("an unreadable input root reports a usage error", async () => {
+  const { root, cleanup } = await fixture();
+  try {
+    const unreadable = join(root, "unreadable");
+    await mkdir(unreadable);
+    await chmod(unreadable, 0o000);
+    try {
+      const result = run([unreadable]);
+      assert.equal(result.status, 2);
+      assert.match(result.stderr, /Cannot read references directory.*EACCES|Cannot read references directory.*permission denied/i);
+    } finally {
+      await chmod(unreadable, 0o700);
+    }
   } finally {
     await cleanup();
   }
