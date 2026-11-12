@@ -39,6 +39,8 @@ The automated suite covers the matrix above using disposable fixtures. The end-t
 
 A separate manual run used two disposable galleries and five generated synthetic image scenes. Dry-run planned 10 outputs without changing the tree; conversion generated 10; repeat skipped 10 without changing them; force replaced 10. Every output decoded with the expected dimensions, source hashes and modification times were unchanged, and no temporary files remained. A landscape full-size image, rotated thumbnail, and transparent portrait full-size image were opened for visual inspection. These generated scenes verify the CLI workflow, but they do not replace owner review of real photographs.
 
+A second disposable run used two AI-generated, photorealistic test images: a landscape kitchen JPG and a portrait terrace PNG. Its dry-run, conversion, repeat, and force summaries reported 4 planned, 4 generated, 4 skipped, and 4 replaced outputs respectively, with zero failures. All four WebP outputs decoded within their bounding boxes; the source hashes and modification times stayed unchanged. The kitchen full-size and terrace thumbnail outputs were opened for visual inspection. These are generated fixtures, not RTI client photographs.
+
 Known verification limits: WebP quality 82 is set explicitly in the encoder and reported by help, but the decoded WebP metadata does not independently expose the encoder quality value. Dry-run does not encode outputs or prove write permissions for output folders that do not yet exist. Existing regular output files are skipped without checking whether they decode.
 
 ## Manual QA before owner review
