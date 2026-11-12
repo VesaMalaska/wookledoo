@@ -6,7 +6,7 @@ WookleDoo is a standalone TypeScript command-line tool for batch-converting refe
 
 It began with a practical need: preparing 50+ reference photos across 11 galleries for the Rakennustyö Immonen (RTI) website without individually exporting every image.
 
-> **Project status:** CLI argument handling and gallery discovery are implemented. Image conversion and output generation are not. The image behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
+> **Project status:** CLI argument handling, gallery discovery, and a standalone image transformation module are implemented. The CLI does not yet convert images or generate outputs. The end-to-end behavior below is the **target**, not current functionality. See [ROADMAP.md](ROADMAP.md).
 
 ## What it will do
 
@@ -73,6 +73,8 @@ pnpm build
 ```
 
 `pnpm start -- ...` currently lists immediate galleries and supported source files in deterministic order, then prints counts for galleries, sources, and ignored entries. It reads directory entries but does not open or convert image data, create output folders, or write files. `--dry-run` and `--force` are accepted but have no processing effect yet. Help exits 0; invalid usage or input exits 2; gallery discovery errors exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
+
+`src/transform.ts` provides `transformImage(sourcePath, "thumbnail" | "full-size")`, which returns one WebP `Buffer` per call. It reads one source at a time and leaves output paths and writes to later tasks. `ImageTransformError.code` distinguishes unreadable, unsupported-format, and multipage inputs; the caller can report or skip them as appropriate.
 
 ## Planned conversion usage (not yet implemented)
 
