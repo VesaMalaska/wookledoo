@@ -1,6 +1,6 @@
 # CLI and File-System Contract (v1)
 
-This document specifies the MVP. CLI parsing, gallery discovery, transformation, and output generation are implemented. Complete dry-run reporting and progress summaries are planned for Issue #6. It should remain consistent with README examples and acceptance tests.
+This document specifies the MVP. CLI parsing, gallery discovery, transformation, output generation, and dry-run reporting are implemented. It should remain consistent with README examples and acceptance tests.
 
 ## Command
 
@@ -76,6 +76,9 @@ Rules:
 ## Reporting and exit behavior
 
 Display the input path, selected presets, galleries scanned, sources discovered, generated variants, skipped existing variants, ignored/unsupported entries, and failed files/variants. Make it clear when dry-run counts are **planned**, not completed.
+
+The summary reports completed generations, completed replacements, existing variants skipped, planned generations, planned replacements, multipage sources skipped, and failures separately. A source that cannot be decoded is counted as one failure; a source with multiple pages is counted as one explicit skip.
+Expected `thumbnail/` and `full-size/` output directories are excluded from the ignored-entry count.
 
 Suggested exit codes:
 - `0` — successful operation (including valid no-op runs and help).

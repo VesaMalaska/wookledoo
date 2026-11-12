@@ -72,19 +72,19 @@ test("rerun skips each existing variant, missing variant is filled, and force re
     const fullBefore = await fingerprint(full);
     const repeat = run(root);
     assert.equal(repeat.status, 0, repeat.stderr);
-    assert.match(repeat.stdout, /0 outputs generated, 2 existing skipped/);
+    assert.match(repeat.stdout, /0 outputs generated, 0 outputs replaced, 2 existing skipped/);
     assert.deepEqual(await fingerprint(thumb), thumbBefore);
     assert.deepEqual(await fingerprint(full), fullBefore);
     await rm(full);
     const partial = run(root);
     assert.equal(partial.status, 0, partial.stderr);
-    assert.match(partial.stdout, /1 outputs generated, 1 existing skipped/);
+    assert.match(partial.stdout, /1 outputs generated, 0 outputs replaced, 1 existing skipped/);
     assert.deepEqual(await fingerprint(thumb), thumbBefore);
     await writeFile(thumb, "stale generated output");
     const forced = run(root, "--force");
     assert.equal(forced.status, 0, forced.stderr);
     assert.equal((await sharp(thumb).metadata()).format, "webp");
-    assert.match(forced.stdout, /2 outputs generated/);
+    assert.match(forced.stdout, /0 outputs generated, 2 outputs replaced/);
     assert.deepEqual(await fingerprint(source), sourceBefore);
   });
 });
@@ -188,5 +188,78 @@ test("dry-run leaves gallery trees untouched", async () => {
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(await readdir(gallery), ["photo.jpg"]);
     assert.deepEqual(await fingerprint(source), before);
+  });
+});
+
+test("dry-run reports new, skipped, and replacement variants without any writes", async () => {
+  await fixture(async (root) => {
+    const gallery = join(root, "gallery");
+    await mkdir(gallery);
+    const first = join(gallery, "first.jpg");
+    const second = join(gallery, "second.png");
+    await image(first); await image(second);
+    await mkdir(join(gallery, "thumbnail"));
+    const existing = join(gallery, "thumbnail", "first.webp");
+    await writeFile(existing, "existing");
+    const before = await Promise.all([first, second, existing].map(fingerprint));
+    const entries = await readdir(gallery);
+
+    const preview = run(root, "--dry-run");
+    assert.equal(preview.status, 0, preview.stderr);
+    assert.match(preview.stdout, /Skipped existing: .*first\.webp/);
+    assert.match(preview.stdout, /Would generate: .*first\.webp/);
+    assert.match(preview.stdout, /0 outputs generated, 0 outputs replaced, 1 existing skipped, 3 planned generates, 0 planned replacements/);
+    assert.deepEqual(await readdir(gallery), entries);
+    assert.deepEqual(await readdir(join(gallery, "thumbnail")), ["first.webp"]);
+    assert.deepEqual(await Promise.all([first, second, existing].map(fingerprint)), before);
+
+    const forcePreview = run(root, "--dry-run", "--force");
+    assert.equal(forcePreview.status, 0, forcePreview.stderr);
+    assert.match(forcePreview.stdout, /Would replace: .*first\.webp/);
+    assert.match(forcePreview.stdout, /0 outputs generated, 0 outputs replaced, 0 existing skipped, 3 planned generates, 1 planned replacements/);
+    assert.deepEqual(await readdir(gallery), entries);
+    assert.deepEqual(await Promise.all([first, second, existing].map(fingerprint)), before);
+  });
+});
+
+test("corrupt sources fail once while valid images and other galleries continue", async () => {
+  await fixture(async (root) => {
+    const first = join(root, "first");
+    const second = join(root, "second");
+    await mkdir(first); await mkdir(second);
+    const corrupt = join(first, "broken.jpg");
+    await writeFile(corrupt, "not an image");
+    await image(join(first, "good.jpg"));
+    await image(join(second, "other.png"));
+    const result = run(root);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /broken\.jpg.*Cannot transform/);
+    assert.match(result.stdout, /4 outputs generated, 0 outputs replaced, 0 existing skipped, 0 planned generates, 0 planned replacements, 0 multipage skipped, 1 failures/);
+    assert.equal((await sharp(join(first, "thumbnail", "good.webp")).metadata()).format, "webp");
+    assert.equal((await sharp(join(second, "full-size", "other.webp")).metadata()).format, "webp");
+    const preview = run(root, "--dry-run");
+    assert.equal(preview.status, 1);
+    assert.match(preview.stdout, /0 outputs generated, 0 outputs replaced, 4 existing skipped, 0 planned generates, 0 planned replacements, 0 multipage skipped, 1 failures/);
+  });
+});
+
+test("animated WebP is explicitly skipped in conversion and dry-run", async () => {
+  await fixture(async (root) => {
+    const gallery = join(root, "gallery");
+    await mkdir(gallery);
+    const source = join(gallery, "animated.webp");
+    const pixels = Buffer.alloc(16 * 32 * 4, 255);
+    for (let offset = 16 * 16 * 4; offset < pixels.length; offset += 4) {
+      pixels[offset] = 0;
+    }
+    await sharp(pixels, { raw: { width: 16, height: 32, channels: 4, pageHeight: 16 } })
+      .webp({ loop: 0, delay: [100, 100] }).toFile(source);
+    for (const flags of [["--dry-run"], []]) {
+      const result = run(root, ...flags);
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stderr, /Warning: .*animated\.webp.*multipage/);
+      assert.match(result.stdout, /1 multipage skipped, 0 failures/);
+      assert.deepEqual(await readdir(gallery), ["animated.webp"]);
+    }
   });
 });

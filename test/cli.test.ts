@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import sharp from "sharp";
 
 const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const entryPoint = fileURLToPath(new URL("../src/cli.ts", import.meta.url));
@@ -66,13 +67,13 @@ test("absolute and relative paths discover sorted galleries and mixed-case input
     await mkdir(join(a, "nested"));
     await mkdir(join(a, "thumbnail"));
     await mkdir(join(a, "full-size"));
-    await writeFile(join(a, "z.WEBP"), "");
-    await writeFile(join(a, "B.JpEg"), "");
-    await writeFile(join(a, "a.JPG"), "");
+    for (const path of [join(a, "z.WEBP"), join(a, "B.JpEg"), join(a, "a.JPG"), join(b, "other.PnG")]) {
+      const format = path.toLowerCase().endsWith(".webp") ? "webp" : path.toLowerCase().endsWith(".png") ? "png" : "jpeg";
+      await sharp({ create: { width: 8, height: 8, channels: 3, background: "#123456" } }).toFormat(format).toFile(path);
+    }
     await writeFile(join(a, "ignored.heic"), "");
     await writeFile(join(a, "nested", "hidden.png"), "");
     await writeFile(join(a, "thumbnail", "output.webp"), "");
-    await writeFile(join(b, "other.PnG"), "");
     await symlink(a, join(root, "linked-gallery"));
     await symlink(join(a, "a.JPG"), join(b, "linked.jpg"));
 
@@ -85,8 +86,8 @@ test("absolute and relative paths discover sorted galleries and mixed-case input
     assert.equal(withPnpmSeparator.status, 0, withPnpmSeparator.stderr);
     assert.match(absolute.stdout, /dry-run: on, force: on/);
     assert.match(relativeResult.stdout, /dry-run: on, force: off/);
-    assert.match(absolute.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs generated, 0 existing skipped, 0 failures/);
-    assert.match(relativeResult.stdout, /Summary: 2 galleries, 4 sources, 8 ignored entries; 0 outputs generated, 0 existing skipped, 0 failures/);
+    assert.match(absolute.stdout, /Summary: 2 galleries, 4 sources, 4 ignored entries; 0 outputs generated, 0 outputs replaced, 0 existing skipped, 8 planned generates, 0 planned replacements, 0 multipage skipped, 0 failures/);
+    assert.match(relativeResult.stdout, /8 planned generates, 0 planned replacements, 0 multipage skipped, 0 failures/);
 
     const lines = absolute.stdout.split("\n").filter((line) => line.startsWith("Gallery:") || line.startsWith("  "));
     assert.deepEqual(lines, [

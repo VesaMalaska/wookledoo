@@ -20,8 +20,8 @@ export class ImageTransformError extends Error {
   }
 }
 
-/** Encode one still source as one WebP variant. The caller controls writes and concurrency. */
-export async function transformImage(sourcePath: string, variant: Variant): Promise<Buffer> {
+/** Validate a source without writing or encoding an output. */
+export async function inspectImage(sourcePath: string): Promise<void> {
   let metadata;
   try {
     metadata = await sharp(sourcePath, { failOn: "error" }).metadata();
@@ -36,7 +36,11 @@ export async function transformImage(sourcePath: string, variant: Variant): Prom
   if (metadata.format !== "jpeg" && metadata.format !== "png" && metadata.format !== "webp") {
     throw new ImageTransformError("unsupported-format", sourcePath, `unsupported image format: ${metadata.format ?? "unknown"}`);
   }
+}
 
+/** Encode one still source as one WebP variant. The caller controls writes and concurrency. */
+export async function transformImage(sourcePath: string, variant: Variant): Promise<Buffer> {
+  await inspectImage(sourcePath);
   const { size, quality } = presets[variant];
   try {
     return await sharp(sourcePath, { failOn: "error" })

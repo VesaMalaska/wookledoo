@@ -1,14 +1,18 @@
 import { link, lstat, mkdir, rename, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { basename, dirname, extname, join } from "node:path";
-import { ImageTransformError, transformImage, type Variant } from "./transform.js";
+import { ImageTransformError, inspectImage, transformImage, type Variant } from "./transform.js";
 import type { Discovery, Gallery } from "./cli.js";
 
 const variants: Variant[] = ["thumbnail", "full-size"];
 
 export interface OutputResult {
   generated: number;
+  replaced: number;
   skipped: number;
+  planned: number;
+  replacements: number;
+  multipage: number;
   failed: number;
 }
 
@@ -48,8 +52,9 @@ async function outputDirectory(path: string, dryRun: boolean): Promise<void> {
   }
 }
 
-async function writeVariant(destination: string, bytes: Buffer, force: boolean): Promise<"generated" | "skipped"> {
+async function writeVariant(destination: string, bytes: Buffer, force: boolean): Promise<"generated" | "replaced" | "skipped"> {
   const temporary = join(dirname(destination), `.wookledoo-${randomUUID()}.tmp`);
+  let operationError: unknown;
   try {
     await writeFile(temporary, bytes, { flag: "wx" });
     // Recheck after encoding: a destination may have appeared while work was in progress.
@@ -69,10 +74,17 @@ async function writeVariant(destination: string, bytes: Buffer, force: boolean):
         throw error;
       }
     }
-    return "generated";
+    return exists ? "replaced" : "generated";
+  } catch (error) {
+    operationError = error;
+    throw error;
   } finally {
     await unlink(temporary).catch((error: unknown) => {
-      if (!isMissing(error)) throw error;
+      if (isMissing(error)) return;
+      if (operationError !== undefined) {
+        throw new AggregateError([operationError, error], `${describe(operationError)}; temporary-file cleanup failed: ${describe(error)}`);
+      }
+      throw error;
     });
   }
 }
@@ -94,12 +106,24 @@ function collisions(gallery: Gallery): Set<string> {
 }
 
 export async function generateOutputs(discovery: Discovery, options: { dryRun: boolean; force: boolean }): Promise<OutputResult> {
-  const result: OutputResult = { generated: 0, skipped: 0, failed: 0 };
+  const result: OutputResult = { generated: 0, replaced: 0, skipped: 0, planned: 0, replacements: 0, multipage: 0, failed: discovery.errors.length };
   for (const gallery of discovery.galleries) {
     const conflicting = collisions(gallery);
     result.failed += conflicting.size;
     for (const source of gallery.sources) {
       if (conflicting.has(source)) continue;
+      try {
+        await inspectImage(source);
+      } catch (error) {
+        if (error instanceof ImageTransformError && error.code === "multipage") {
+          result.multipage++;
+          console.error(`Warning: ${describe(error)}`);
+        } else {
+          result.failed++;
+          console.error(`Error: ${source}: ${describe(error)}`);
+        }
+        continue;
+      }
       const stem = basename(source, extname(source));
       for (const variant of variants) {
         const directory = join(gallery.path, variant);
@@ -113,6 +137,8 @@ export async function generateOutputs(discovery: Discovery, options: { dryRun: b
             continue;
           }
           if (options.dryRun) {
+            if (exists) result.replacements++;
+            else result.planned++;
             console.log(`Would ${exists ? "replace" : "generate"}: ${destination}`);
             continue;
           }
@@ -122,6 +148,9 @@ export async function generateOutputs(discovery: Discovery, options: { dryRun: b
           if (outcome === "generated") {
             result.generated++;
             console.log(`Generated: ${destination}`);
+          } else if (outcome === "replaced") {
+            result.replaced++;
+            console.log(`Replaced: ${destination}`);
           } else {
             result.skipped++;
             console.log(`Skipped existing: ${destination}`);
