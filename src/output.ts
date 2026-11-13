@@ -52,7 +52,7 @@ async function outputDirectory(path: string, dryRun: boolean): Promise<void> {
   }
 }
 
-async function writeVariant(destination: string, bytes: Buffer, force: boolean): Promise<"generated" | "replaced" | "skipped"> {
+export async function writeVariant(destination: string, bytes: Buffer, force: boolean): Promise<"generated" | "replaced" | "skipped"> {
   const temporary = join(dirname(destination), `.wookledoo-${randomUUID()}.tmp`);
   let operationError: unknown;
   try {

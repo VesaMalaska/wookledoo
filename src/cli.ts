@@ -1,6 +1,7 @@
 import { lstat, readdir } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import { generateOutputs } from "./output.js";
+import { exportGalleries } from "./export.js";
 
 const supportedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const outputDirectoryNames = new Set(["thumbnail", "full-size"]);
@@ -23,21 +24,24 @@ interface Options {
   dryRun: boolean;
   force: boolean;
   numbered: boolean;
+  output?: string;
 }
 
 class UsageError extends Error {}
 class InputError extends Error {}
 
-const usage = `Usage: pnpm start -- <references-directory> [--dry-run] [--force] [--numbered]
+const usage = `Usage: pnpm start -- <references-directory> [--dry-run] [--force] [--numbered] [--output <directory>]
        pnpm start -- --help
 
 Convert direct JPG, JPEG, PNG, and WebP files in immediate gallery directories.
 Create thumbnail/ and full-size/ WebP variants inside each gallery.
+With --output, create a separate clean export with slugified gallery folders.
 
 Options:
   --dry-run  Show planned outputs without writing files or directories.
   --force    Replace existing generated variants.
   --numbered Name outputs 01.webp, 02.webp, etc. within each gallery.
+  --output   Export into a separate empty directory; --force cannot reuse a nonempty export.
   --help     Show this help and exit.
 
 Presets: thumbnail 320 x 320, full-size 1920 x 1920, WebP quality 82.
@@ -51,8 +55,10 @@ function parseArguments(args: string[]): Options | "help" {
   let force = false;
   let numbered = false;
   let help = false;
+  let output: string | undefined;
 
-  for (const arg of args) {
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]!;
     if (arg === "--help") {
       help = true;
     } else if (arg === "--dry-run") {
@@ -64,6 +70,11 @@ function parseArguments(args: string[]): Options | "help" {
     } else if (arg === "--numbered") {
       if (numbered) throw new UsageError("--numbered was supplied more than once.");
       numbered = true;
+    } else if (arg === "--output") {
+      if (output !== undefined) throw new UsageError("--output was supplied more than once.");
+      const value = args[++index];
+      if (!value || value.startsWith("-")) throw new UsageError("--output requires a directory.");
+      output = resolve(value);
     } else if (arg.startsWith("-")) {
       throw new UsageError(`Unknown option: ${arg}`);
     } else if (root !== undefined) {
@@ -74,13 +85,13 @@ function parseArguments(args: string[]): Options | "help" {
   }
 
   if (help) {
-    if (root !== undefined || dryRun || force || numbered) {
+    if (root !== undefined || dryRun || force || numbered || output !== undefined) {
       throw new UsageError("--help must be used by itself.");
     }
     return "help";
   }
   if (root === undefined) throw new UsageError("Missing references directory.");
-  return { root: resolve(root), dryRun, force, numbered };
+  return { root: resolve(root), dryRun, force, numbered, output };
 }
 
 function compareNames(a: string, b: string): number {
@@ -165,6 +176,7 @@ async function main(): Promise<void> {
 
   const sourceCount = result.galleries.reduce((count, gallery) => count + gallery.sources.length, 0);
   console.log(`Input: ${result.root}`);
+  if (options.output) console.log(`Output: ${options.output}`);
   console.log(`Mode: ${options.dryRun ? "dry-run" : "conversion"} (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"}, numbered: ${options.numbered ? "on" : "off"})`);
   console.log("Presets: thumbnail 320 x 320, full-size 1920 x 1920; WebP quality 82.");
   for (const gallery of result.galleries) {
@@ -173,8 +185,10 @@ async function main(): Promise<void> {
   }
   for (const path of result.ignoredPaths) console.log(`Ignored: ${path}`);
   for (const error of result.errors) console.error(`Error: ${error}`);
-  const output = await generateOutputs(result, options);
-  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored ${result.ignoredEntries === 1 ? "entry" : "entries"}; ${output.generated} outputs generated, ${output.replaced} outputs replaced, ${output.skipped} existing skipped, ${output.planned} planned generates, ${output.replacements} planned replacements, ${output.multipage} multipage skipped, ${output.failed} failures.`);
+  const exportResult = options.output ? await exportGalleries(result, { ...options, output: options.output }) : undefined;
+  const output = exportResult ?? await generateOutputs(result, options);
+  const exportCounts = exportResult ? `, ${exportResult.exportedGalleries} galleries ${options.dryRun ? "planned for export" : "exported"}, ${exportResult.emptyGalleries} empty ${exportResult.emptyGalleries === 1 ? "gallery" : "galleries"} skipped` : "";
+  console.log(`Summary: ${result.galleries.length} galleries, ${sourceCount} sources, ${result.ignoredEntries} ignored ${result.ignoredEntries === 1 ? "entry" : "entries"}${exportCounts}; ${output.generated} outputs generated, ${output.replaced} outputs replaced, ${output.skipped} existing skipped, ${output.planned} planned generates, ${output.replacements} planned replacements, ${output.multipage} multipage skipped, ${output.failed} failures.`);
   if (output.failed > 0) process.exitCode = 1;
 }
 

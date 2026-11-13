@@ -5,7 +5,7 @@ This document specifies the implemented MVP. It should remain consistent with RE
 ## Command
 
 ```text
-pnpm start -- <references-directory> [--dry-run] [--force] [--numbered]
+pnpm start -- <references-directory> [--dry-run] [--force] [--numbered] [--output <directory>]
 pnpm start -- --help
 ```
 
@@ -13,6 +13,7 @@ pnpm start -- --help
 - `--dry-run`: report work without creating directories or writing files. Combined with `--force`, show what would be replaced.
 - `--force`: regenerate and replace generated output files, **never sources**.
 - `--numbered`: use sequential, zero-padded output names in each gallery.
+- `--output <directory>`: create a separate website-ready collection. The destination must not overlap the source tree and must be empty if it exists. `--force` does not bypass this rule in export mode.
 - `--help`: print usage/defaults and exit successfully without requiring a path.
 - Unknown flags, extra positional arguments, missing/invalid paths: explain the problem and exit nonzero.
 
@@ -50,6 +51,12 @@ gallery/
 - Do not delete obsolete generated images or unrelated directory contents.
 - In numbered mode, check both output folders for existing entries before writing in a gallery. Without `--force`, any existing numbered output blocks that gallery, avoiding a silent association with a changed source set. With `--force`, expected numbered regular files are replaced and missing files generated; any unexpected entry, including a stem-named file or stale number, blocks that gallery. Move old output folders aside or manually remove generated files, then rerun to make a clean numbered set. The CLI never performs that deletion. `--dry-run` applies the same checks without writing.
 - Treat output paths that are symlinks or directories rather than regular files as errors; never follow them for a replacement.
+
+### Separate export mode
+
+With `--output`, create `<output>/<gallery-slug>/thumbnail/` and `<output>/<gallery-slug>/full-size/` containing only generated WebPs. Do not copy originals. Slugs are lowercase, transliterate Scandinavian letters (`ä/å/ö` to `a/a/o`), replace punctuation and whitespace with hyphens, and collapse/trim hyphens. Empty slugs and collisions fail before writing. Export names use source stems by default or the existing sorted, per-gallery numbering with `--numbered`. Empty galleries create no output. Root-level files and nested entries remain ignored and reported.
+
+The output root cannot be identical to, inside, or an ancestor of the input root. Symlinked destination path components and non-directory path components are rejected. A nonempty destination is rejected even with `--force`; move an old export aside and regenerate into an empty directory. Preflight validates destinations, slugs, collisions, and source metadata before writing. Dry-run is zero-write. Image encoding or write failures return failure status and may leave a partial new export, which must be moved aside before retrying.
 
 ## Transform presets
 
@@ -93,4 +100,4 @@ An existing regular output file is skipped without validating its WebP contents.
 
 ## Scope boundary
 
-Do not add an output-root flag, profile system, configurable encoders, plugin architecture, RTI-specific config, or parallel job manager in v1. Such additions belong in a separately approved roadmap task.
+The output-root flag was added for Phase 2, Task 8. Profile systems, configurable encoders, plugin architecture, RTI-specific config, and parallel job managers remain out of scope.

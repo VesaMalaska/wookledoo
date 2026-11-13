@@ -75,10 +75,10 @@ Do **not** implement these as part of v1 without a separate decision:
 
 ### Chunk 2.2 — Website-ready gallery export
 
-- [ ] **Task 8:** Add opt-in `--output <directory>` export mode. Read the original gallery collection, create a **separate** website-ready directory tree containing only WebP variants in `thumbnail/` and `full-size/`; preserve the current in-place CLI behavior when `--output` is absent.
-- [ ] In export mode, derive URL-friendly gallery slugs from folder names (lowercase, whitespace/punctuation to hyphens, `ä/å/ö` → `a/a/o`; trim/collapse hyphens); reject empty or colliding slugs before writing. Support `--numbered` with the existing deterministic zero-padding rules and default stem naming without `--numbered`.
-- [ ] Skip empty gallery folders and root-level orphaned images; leave all sources and source folder names untouched. Guard against output nested in input, input nested in output, identical paths, symlink/path traversal, unsafe existing outputs, and stale exported files. `--dry-run` remains zero-write; `--force` never deletes unrelated content.
-- [ ] Add temporary-directory integration tests, meaningful reporting, README/CLI spec examples, and verify output layout before owner QA on real RTI galleries.
+- [x] **Task 8:** Add opt-in `--output <directory>` export mode. Read the original gallery collection, create a **separate** website-ready directory tree containing only WebP variants in `thumbnail/` and `full-size/`; preserve the current in-place CLI behavior when `--output` is absent.
+- [x] In export mode, derive URL-friendly gallery slugs from folder names (lowercase, whitespace/punctuation to hyphens, `ä/å/ö` → `a/a/o`; trim/collapse hyphens); reject empty or colliding slugs before writing. Support `--numbered` with the existing deterministic zero-padding rules and default stem naming without `--numbered`.
+- [x] Skip empty gallery folders and root-level orphaned images; leave all sources and source folder names untouched. Guard against output nested in input, input nested in output, identical paths, symlink/path traversal, unsafe existing outputs, and stale exported files. `--dry-run` remains zero-write; `--force` never deletes unrelated content.
+- [x] Add temporary-directory integration tests, meaningful reporting, README/CLI spec examples, and verify output layout before owner QA on real RTI galleries.
 
 **Export boundary:** A clean output tree is more important than reusing old exports. Use a simple conservative policy for existing output content (fail clearly rather than silently leave stale files or mix datasets); document how an operator can move an old export aside and regenerate it. No database, manifest, image copying, source mutation, GUI, or RTI-specific hardcoded paths.
 
