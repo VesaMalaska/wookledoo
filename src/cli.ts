@@ -22,12 +22,13 @@ interface Options {
   root: string;
   dryRun: boolean;
   force: boolean;
+  numbered: boolean;
 }
 
 class UsageError extends Error {}
 class InputError extends Error {}
 
-const usage = `Usage: pnpm start -- <references-directory> [--dry-run] [--force]
+const usage = `Usage: pnpm start -- <references-directory> [--dry-run] [--force] [--numbered]
        pnpm start -- --help
 
 Convert direct JPG, JPEG, PNG, and WebP files in immediate gallery directories.
@@ -36,6 +37,7 @@ Create thumbnail/ and full-size/ WebP variants inside each gallery.
 Options:
   --dry-run  Show planned outputs without writing files or directories.
   --force    Replace existing generated variants.
+  --numbered Name outputs 01.webp, 02.webp, etc. within each gallery.
   --help     Show this help and exit.
 
 Presets: thumbnail 320 x 320, full-size 1920 x 1920, WebP quality 82.
@@ -47,6 +49,7 @@ function parseArguments(args: string[]): Options | "help" {
   let root: string | undefined;
   let dryRun = false;
   let force = false;
+  let numbered = false;
   let help = false;
 
   for (const arg of args) {
@@ -58,6 +61,9 @@ function parseArguments(args: string[]): Options | "help" {
     } else if (arg === "--force") {
       if (force) throw new UsageError("--force was supplied more than once.");
       force = true;
+    } else if (arg === "--numbered") {
+      if (numbered) throw new UsageError("--numbered was supplied more than once.");
+      numbered = true;
     } else if (arg.startsWith("-")) {
       throw new UsageError(`Unknown option: ${arg}`);
     } else if (root !== undefined) {
@@ -68,13 +74,13 @@ function parseArguments(args: string[]): Options | "help" {
   }
 
   if (help) {
-    if (root !== undefined || dryRun || force) {
+    if (root !== undefined || dryRun || force || numbered) {
       throw new UsageError("--help must be used by itself.");
     }
     return "help";
   }
   if (root === undefined) throw new UsageError("Missing references directory.");
-  return { root: resolve(root), dryRun, force };
+  return { root: resolve(root), dryRun, force, numbered };
 }
 
 function compareNames(a: string, b: string): number {
@@ -159,7 +165,7 @@ async function main(): Promise<void> {
 
   const sourceCount = result.galleries.reduce((count, gallery) => count + gallery.sources.length, 0);
   console.log(`Input: ${result.root}`);
-  console.log(`Mode: ${options.dryRun ? "dry-run" : "conversion"} (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"})`);
+  console.log(`Mode: ${options.dryRun ? "dry-run" : "conversion"} (dry-run: ${options.dryRun ? "on" : "off"}, force: ${options.force ? "on" : "off"}, numbered: ${options.numbered ? "on" : "off"})`);
   console.log("Presets: thumbnail 320 x 320, full-size 1920 x 1920; WebP quality 82.");
   for (const gallery of result.galleries) {
     console.log(`Gallery: ${gallery.path} (${gallery.sources.length} ${gallery.sources.length === 1 ? "source" : "sources"})`);

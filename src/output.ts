@@ -1,4 +1,4 @@
-import { link, lstat, mkdir, rename, unlink, writeFile } from "node:fs/promises";
+import { link, lstat, mkdir, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { basename, dirname, extname, join } from "node:path";
 import { ImageTransformError, inspectImage, transformImage, type Variant } from "./transform.js";
@@ -105,26 +105,79 @@ function collisions(gallery: Gallery): Set<string> {
   return conflicting;
 }
 
-export async function generateOutputs(discovery: Discovery, options: { dryRun: boolean; force: boolean }): Promise<OutputResult> {
+async function checkNumberedGallery(gallery: Gallery, names: Set<string>, force: boolean): Promise<void> {
+  for (const variant of variants) {
+    const directory = join(gallery.path, variant);
+    await outputDirectory(directory, true);
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if (isMissing(error)) continue;
+      throw error;
+    }
+    for (const entry of entries) {
+      const path = join(directory, entry.name);
+      if (!entry.isFile()) throw new Error(`Output target is not a regular file: "${path}"`);
+      if (!names.has(entry.name)) {
+        throw new Error(`Unexpected output in numbered gallery: "${path}". Move or remove old generated outputs before regenerating.`);
+      }
+      if (!force) {
+        throw new Error(`Existing numbered output: "${path}". Use --force to regenerate the complete current set.`);
+      }
+    }
+  }
+}
+
+export async function generateOutputs(discovery: Discovery, options: { dryRun: boolean; force: boolean; numbered: boolean }): Promise<OutputResult> {
   const result: OutputResult = { generated: 0, replaced: 0, skipped: 0, planned: 0, replacements: 0, multipage: 0, failed: discovery.errors.length };
   for (const gallery of discovery.galleries) {
     const conflicting = collisions(gallery);
     result.failed += conflicting.size;
-    for (const source of gallery.sources) {
-      if (conflicting.has(source)) continue;
-      try {
-        await inspectImage(source);
-      } catch (error) {
-        if (error instanceof ImageTransformError && error.code === "multipage") {
-          result.multipage++;
-          console.error(`Warning: ${describe(error)}`);
-        } else {
-          result.failed++;
-          console.error(`Error: ${source}: ${describe(error)}`);
+    if (options.numbered && conflicting.size > 0) continue;
+    const eligible: string[] = [];
+    if (options.numbered) {
+      for (const source of gallery.sources) {
+        try {
+          await inspectImage(source);
+          eligible.push(source);
+        } catch (error) {
+          if (error instanceof ImageTransformError && error.code === "multipage") {
+            result.multipage++;
+            console.error(`Warning: ${describe(error)}`);
+          } else {
+            result.failed++;
+            console.error(`Error: ${source}: ${describe(error)}`);
+          }
         }
+      }
+      const width = Math.max(2, String(eligible.length).length);
+      const names = new Set(eligible.map((_, index) => `${String(index + 1).padStart(width, "0")}.webp`));
+      try {
+        await checkNumberedGallery(gallery, names, options.force);
+      } catch (error) {
+        result.failed++;
+        console.error(`Error: ${gallery.path}: ${describe(error)}`);
         continue;
       }
-      const stem = basename(source, extname(source));
+    }
+    for (const [index, source] of (options.numbered ? eligible : gallery.sources).entries()) {
+      if (conflicting.has(source)) continue;
+      if (!options.numbered) {
+        try {
+          await inspectImage(source);
+        } catch (error) {
+          if (error instanceof ImageTransformError && error.code === "multipage") {
+            result.multipage++;
+            console.error(`Warning: ${describe(error)}`);
+          } else {
+            result.failed++;
+            console.error(`Error: ${source}: ${describe(error)}`);
+          }
+          continue;
+        }
+      }
+      const stem = options.numbered ? String(index + 1).padStart(Math.max(2, String(eligible.length).length), "0") : basename(source, extname(source));
       for (const variant of variants) {
         const directory = join(gallery.path, variant);
         const destination = join(directory, `${stem}.webp`);

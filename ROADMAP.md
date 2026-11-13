@@ -68,8 +68,8 @@ Do **not** implement these as part of v1 without a separate decision:
 
 ### Chunk 2.1 — Optional numbered output names
 
-- [ ] **Task 7:** Add an opt-in `--numbered` flag. By default, preserve original source stems; when enabled, name generated WebP variants by the existing deterministic processing order, restarting numbering in each gallery. Use zero-padded numeric filenames (at least two digits, with width sufficient for the gallery size), and use the same number for thumbnail and full-size variants.
-- [ ] Cover help/README examples, mixed galleries, processing order, and safe `--dry-run` / `--force` behavior with focused tests.
+- [x] **Task 7:** Add an opt-in `--numbered` flag. By default, preserve original source stems; when enabled, name generated WebP variants by the existing deterministic processing order, restarting numbering in each gallery. Use zero-padded numeric filenames (at least two digits, with width sufficient for the gallery size), and use the same number for thumbnail and full-size variants.
+- [x] Cover help/README examples, mixed galleries, processing order, and safe `--dry-run` / `--force` behavior with focused tests.
 
 **Numbering caveat:** Numbers reflect the current sorted input order, not a persistent source-to-number mapping. Adding/removing/renaming source files can shift assignments. Do not silently reuse potentially stale numbered outputs as if they belonged to the current source; implement a simple safe rule and document when a clean regenerated set is needed. Never rename originals.
 
