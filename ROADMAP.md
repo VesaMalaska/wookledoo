@@ -24,7 +24,7 @@ A deliberately small, standalone batch image converter. Its first job is produci
 ### Chunk 0.1 — Documentation
 - [x] Define the purpose and target CLI workflow.
 - [x] Write README, roadmap, agent instructions, CLI contract, and test plan.
-- [ ] Owner reviews and approves this documentation PR.
+- [x] Owner reviews and approves this documentation PR.
 
 **Exit:** The intended filesystem behavior and safety rules are unambiguous.
 
@@ -44,7 +44,7 @@ A deliberately small, standalone batch image converter. Its first job is produci
 - [x] **Task 5:** Implement `--dry-run`, useful progress and final summary, controlled error handling, and exit statuses.
 - [x] **Task 6:** Add automated coverage and execute the manual QA checklist against representative multi-folder fixtures.
 
-Tasks 1–6 were verified with generated fixtures, automated tests, and the CLI dry-run/conversion/repeat/force sequence for Issue #7. Representative outputs were visually inspected. This does not include owner QA with the real RTI photographs; that review remains the MVP release gate.
+Tasks 1–6 were verified with generated fixtures, automated tests, and the CLI dry-run/conversion/repeat/force sequence for Issue #7. Representative outputs were visually inspected. Owner QA was subsequently completed using a local working copy of the RTI photo collection. The owner reported a successful separate export of 118 WebPs from 59 photographs across 11 nonempty galleries; the empty gallery and one orphaned root-level photograph were skipped. Client photographs were not committed to this repository.
 
 **MVP acceptance:**
 - Given a folder with multiple galleries and images, a single CLI invocation generates the right files in every gallery.
