@@ -45,7 +45,7 @@ Known verification limits: WebP quality 82 is set explicitly in the encoder and 
 
 ### Issue #16 export verification
 
-Temporary-fixture tests cover Scandinavian slugs, collision and empty-slug preflight, clean numbered and stem exports, empty galleries, root-level orphans, nested entries, symlinks, source hashes and timestamps, dry-run, nonempty destinations, `--force`, path overlap, output layout, and WebP decoding and bounds. The existing in-place tests remain part of the full suite. A separate disposable CLI run demonstrates the resulting export tree. Owner QA with actual images remains pending.
+Temporary-fixture tests cover Scandinavian slugs, collision and empty-slug preflight, clean numbered and stem exports, empty galleries, root-level orphans, nested entries, symlinks, source hashes and timestamps, dry-run, nonempty destinations, `--force`, path overlap, output layout, and WebP decoding and bounds. The existing in-place tests remain part of the full suite. A separate disposable CLI run demonstrates the resulting export tree. The owner subsequently tested the separate export on a local RTI working copy: 12 gallery folders discovered, 59 source images, one empty gallery skipped, one root-level orphan ignored, 118 WebPs planned in dry-run with zero failures. The owner reported that the actual export produced all 118 WebPs. No original client images were uploaded or committed.
 
 ## Manual QA before owner review
 
@@ -60,6 +60,6 @@ Temporary-fixture tests cover Scandinavian slugs, collision and empty-slug prefl
 
 ## Real RTI dataset check
 
-After this PR is approved and merged, the owner should run locally against a **copy** of the actual 11-folder / 50+ photo dataset. Confirm gallery counts and review a representative sample of portrait/landscape images in the actual lightbox. Do not upload these originals to issues, PRs, logs, or the WookleDoo repository.
+**November 2026 owner check:** The owner ran WookleDoo locally on a working copy of the RTI photo dataset, reviewed the dry-run plan (59 photographs in 11 nonempty galleries, 118 WebP outputs, no failures), and reported successful generation of all 118 files. The repository contains no client image files.
 
-**Release gate:** The owner approves the implementation PR after looking at actual generated images. Passing unit tests alone is not sufficient.
+For subsequent changes, run owner QA on representative real photographs again, including visual checks of portrait/landscape images in the website lightbox. Do not upload originals to issues, PRs, logs, or this repository. Passing automated tests alone is not a substitute for that review.
