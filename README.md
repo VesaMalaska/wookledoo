@@ -18,6 +18,7 @@ It began with a practical need: preparing 50+ reference photos across 11 galleri
 - Leave every original unchanged.
 - Skip existing outputs by default; allow explicit regeneration with `--force`.
 - Preview the planned work with `--dry-run`.
+- Optionally name outputs by sorted gallery order with `--numbered`.
 - Print a clear summary and surface per-file failures.
 
 The dimensions are **maximum width and height**, not forced dimensions. For example, a landscape photo might become 320 × 213, while a portrait might become 213 × 320.
@@ -66,6 +67,7 @@ Prerequisites: Node.js 22 or newer and pnpm 11. The project uses TypeScript, [Sh
 pnpm install
 pnpm start -- /path/to/references
 pnpm start -- /path/to/references --dry-run --force
+pnpm start -- /path/to/references --numbered
 pnpm start -- --help
 pnpm typecheck
 pnpm test
@@ -91,11 +93,20 @@ pnpm start -- /path/to/references
 # Regenerate existing variants deliberately
 pnpm start -- /path/to/references --force
 
+# Create numbered variants in each gallery
+pnpm start -- /path/to/references --numbered
+
 # Show usage
 pnpm start -- --help
 ```
 
 Default WebP quality: **82**. The initial CLI uses these fixed presets; adjustable sizing and quality can be added later if a real need emerges.
+
+### Numbered output names
+
+`--numbered` assigns names in the existing sorted source order, starting again in each gallery. For example, `DSC00279 - Copy.JPG`, `DSC02336.JPG`, and `DSC02337 - Copy.JPG` become `01.webp`, `02.webp`, and `03.webp` in both `thumbnail/` and `full-size/`. A gallery with 120 eligible images uses `001.webp` through `120.webp`. Without the flag, the source filename stems remain the output names.
+
+Numbers are based on the **current** source set. Adding, removing, or renaming a source can change which photograph a number refers to. A normal numbered run requires empty output folders; it refuses to reuse existing numbered files. To regenerate, use `--numbered --force`: it replaces current numbered files and creates missing ones. If an output folder contains an unexpected file (including an old stem-named or now-obsolete number), the gallery is refused, even with `--force`. Move the existing `thumbnail/` and `full-size/` folders aside or remove their generated contents yourself, then run `--numbered` to produce a clean set. The CLI never deletes them. Review the replacement plan first with `--numbered --dry-run --force`.
 
 ## Scope and safety
 

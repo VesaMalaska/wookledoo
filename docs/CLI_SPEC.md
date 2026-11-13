@@ -5,13 +5,14 @@ This document specifies the implemented MVP. It should remain consistent with RE
 ## Command
 
 ```text
-pnpm start -- <references-directory> [--dry-run] [--force]
+pnpm start -- <references-directory> [--dry-run] [--force] [--numbered]
 pnpm start -- --help
 ```
 
 - `<references-directory>`: required local parent folder, relative to the working directory or absolute.
 - `--dry-run`: report work without creating directories or writing files. Combined with `--force`, show what would be replaced.
 - `--force`: regenerate and replace generated output files, **never sources**.
+- `--numbered`: use sequential, zero-padded output names in each gallery.
 - `--help`: print usage/defaults and exit successfully without requiring a path.
 - Unknown flags, extra positional arguments, missing/invalid paths: explain the problem and exit nonzero.
 
@@ -43,10 +44,11 @@ gallery/
 
 - Create each output directory only when needed (not during dry-run).
 - Use exactly `thumbnail` and `full-size` as folder names.
-- Use the original filename stem with a `.webp` extension.
+- By default, use the original filename stem with a `.webp` extension. With `--numbered`, assign `01.webp`, `02.webp`, etc. in sorted source order independently for each gallery. Both variants use the same number. Width is at least two digits and expands with the eligible source count (`001.webp` through `120.webp` for 120 sources). Corrupt and multipage sources are excluded from numbering.
 - Keep each gallery separate; equal stems in **different** galleries are fine.
 - Do not change source timestamps, metadata, locations, or names.
 - Do not delete obsolete generated images or unrelated directory contents.
+- In numbered mode, check both output folders for existing entries before writing in a gallery. Without `--force`, any existing numbered output blocks that gallery, avoiding a silent association with a changed source set. With `--force`, expected numbered regular files are replaced and missing files generated; any unexpected entry, including a stem-named file or stale number, blocks that gallery. Move old output folders aside or manually remove generated files, then rerun to make a clean numbered set. The CLI never performs that deletion. `--dry-run` applies the same checks without writing.
 - Treat output paths that are symlinks or directories rather than regular files as errors; never follow them for a replacement.
 
 ## Transform presets
