@@ -57,7 +57,7 @@ references/
         └── photo-01.webp
 ```
 
-There is no separate output root in v1. Both generated variants belong to their respective reference folder.
+By default, generated variants belong to their respective reference folder. Use `--output` for a separate website-ready collection.
 
 ## Setup and current usage
 
@@ -68,6 +68,7 @@ pnpm install
 pnpm start -- /path/to/references
 pnpm start -- /path/to/references --dry-run --force
 pnpm start -- /path/to/references --numbered
+pnpm start -- /path/to/references --output /path/to/website-galleries --numbered
 pnpm start -- --help
 pnpm typecheck
 pnpm test
@@ -75,6 +76,17 @@ pnpm build
 ```
 
 `pnpm start -- ...` lists immediate galleries and supported sources in deterministic order, then generates missing WebP variants inside each gallery. It skips existing variants by default and regenerates them with `--force`. `--dry-run` validates sources and output paths, reports planned generations, replacements, and skips, and makes no filesystem changes. The summary separates generated, replaced, and planned outputs and counts ignored entries, multipage skips, and failures. Help exits 0; invalid usage or input exits 2; processing failures exit 1. The build writes JavaScript to `dist/`, which is ignored by Git.
+
+### Separate website export
+
+```bash
+pnpm start -- /path/to/references --output /path/to/website-galleries --numbered --dry-run
+pnpm start -- /path/to/references --output /path/to/website-galleries --numbered
+```
+
+Export mode creates URL-friendly gallery folders containing only `thumbnail/` and `full-size/` WebPs. For example, `Brödtorpp sauna/DSC02336.JPG` becomes `brodtorpp-sauna/thumbnail/01.webp` and `brodtorpp-sauna/full-size/01.webp` with `--numbered`; without it, both files are `DSC02336.webp`. Empty galleries are omitted. Root-level photographs, unrelated nested files, and symlinks are ignored and reported. Originals and source gallery names stay unchanged.
+
+The destination must be separate from the source tree and empty if it already exists. Export mode refuses any nonempty destination, including with `--force`, so stale results cannot be mixed with a new export. To regenerate, move the old export aside yourself and run the command again with an empty or new destination. The CLI never removes the old export. `--dry-run` checks the same safety rules and writes nothing. A failed conversion can leave a partial new export; move that tree aside before retrying. No original files are copied.
 
 Dry-run checks image metadata but does not encode images or test whether a new output directory can actually be written. A regular file already at a destination is skipped without checking its contents; use `--force` to regenerate it. Animated or multipage supported inputs are warned about and skipped.
 

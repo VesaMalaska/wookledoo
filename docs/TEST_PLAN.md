@@ -43,6 +43,10 @@ A second disposable run used two AI-generated, photorealistic test images: a lan
 
 Known verification limits: WebP quality 82 is set explicitly in the encoder and reported by help, but the decoded WebP metadata does not independently expose the encoder quality value. Dry-run does not encode outputs or prove write permissions for output folders that do not yet exist. Existing regular output files are skipped without checking whether they decode.
 
+### Issue #16 export verification
+
+Temporary-fixture tests cover Scandinavian slugs, collision and empty-slug preflight, clean numbered and stem exports, empty galleries, root-level orphans, nested entries, symlinks, source hashes and timestamps, dry-run, nonempty destinations, `--force`, path overlap, output layout, and WebP decoding and bounds. The existing in-place tests remain part of the full suite. A separate disposable CLI run demonstrates the resulting export tree. Owner QA with actual images remains pending.
+
 ## Manual QA before owner review
 
 1. Create a disposable parent directory containing several gallery folders and a mixture of valid images.
