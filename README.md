@@ -2,9 +2,9 @@
 
 **From a pile of camera photos to tidy, website-ready galleries.**
 
-It started with a familiar little problem in the Hopping Wolf forest: **59 photographs**, spread across **11 galleries**, all waiting to become two optimized image sizes. That's **118 exports**. A perfectly good job for a computer—and a rather boring one for a human.
+It started with a familiar little problem: **59 photographs**, spread across **11 galleries**, all waiting to become two optimized image sizes. That's **118 exports**. A perfectly good job for a computer—and a rather boring one for a human.
 
-So WookleDoo wandered out of the woods.
+So WookleDoo came to the rescue.
 
 WookleDoo is a small, local **TypeScript CLI** that turns folders of JPG, PNG, and WebP photographs into matching **thumbnail** and **full-size WebP** images. It can keep the results beside their originals, or build a separate, clean collection ready to drop into a website.
 
@@ -132,8 +132,8 @@ More detail lives in [ROADMAP.md](ROADMAP.md), [CLI specification](docs/CLI_SPEC
 
 ## License
 
-**No license has been selected yet.** Public visibility alone does not grant permission to reuse, modify, or redistribute this code. A license may be added later by the project owner.
+WookleDoo is released under the [MIT License](LICENSE). See the license file for details.
 
 ---
 
-*Made in the Hopping Wolf forest, where the wolves have better things to do than export the same picture 118 times.* 🐺
+*Built because life's too short to export the same picture 118 times.* 🐺
